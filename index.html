@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Flip 7 Scores</title>
+<meta name="theme-color" content="#2447D6">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Flip 7">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<style>
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px)}
+html{-webkit-text-size-adjust:100%}
+body{margin:0}
+[hidden]{display:none!important}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one narrow column. Standings on top, a round-by-round scoresheet below, and a bottom dock for adding rounds. */
+:root{
+  --bg:#EDF0F5;
+  --surface:#FFFFFF;
+  --ink:#141A26;
+  --muted:#5C6678;
+  --line:#D5DBE6;
+  --track:#E1E6EF;
+  --accent:#2447D6;
+  --accent-ink:#FFFFFF;
+  --gold:#F2B31B;
+  --gold-ink:#3A2A00;
+  --danger:#C2321F;
+  --display:"Bricolage Grotesque","Avenir Next",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E131D;--surface:#171E2C;--ink:#EEF2FA;--muted:#97A2B8;--line:#2A3345;--track:#242D3F;
+    --accent:#7C93FF;--accent-ink:#0E131D;--gold:#F5C443;--gold-ink:#2B1F00;--danger:#FF8A78;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E131D;--surface:#171E2C;--ink:#EEF2FA;--muted:#97A2B8;--line:#2A3345;--track:#242D3F;
+  --accent:#7C93FF;--accent-ink:#0E131D;--gold:#F5C443;--gold-ink:#2B1F00;--danger:#FF8A78;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.4;
+  padding-block:16px 8px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+.page{max-width:44rem;margin:0 auto;display:flex;flex-direction:column;gap:14px;padding-bottom:88px}
+h1,h2{font-family:var(--display);margin:0}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+h1{font-size:1.9rem;line-height:1;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
+.card7{display:inline-grid;place-items:center;width:34px;height:46px;border-radius:7px;background:var(--gold);color:var(--gold-ink);font-weight:800;font-size:1.65rem;transform:rotate(-7deg);box-shadow:0 2px 0 rgba(0,0,0,.2)}
+.tagline{color:var(--muted);font-size:.85rem;font-weight:500}
+
+.btn{font:inherit;font-weight:600;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:10px 14px;min-height:44px;cursor:pointer}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.btn:disabled{opacity:.45;cursor:default}
+.link{background:none;border:0;color:var(--accent);font:inherit;font-weight:600;cursor:pointer;padding:6px}
+.btn:focus-visible,.link:focus-visible,.x:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.menu{padding:14px;display:grid;gap:12px}
+.menu label{display:flex;align-items:center;justify-content:space-between;gap:12px;font-weight:600}
+.menu .field{width:6rem;text-align:center}
+.menu .hintline{margin:0;color:var(--muted);font-size:.85rem}
+.field{font:inherit;font-size:16px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:10px 12px;min-height:44px}
+
+.note{display:flex;gap:10px;align-items:center;justify-content:space-between;border:1px dashed var(--line);background:var(--surface);border-radius:12px;padding:8px 8px 8px 12px;color:var(--muted);font-size:.9rem}
+.banner{background:var(--gold);color:var(--gold-ink);border-radius:12px;padding:12px 14px;font-weight:700}
+
+.add{display:flex;gap:8px}
+.add .field{flex:1;min-width:0}
+
+.sechead{display:flex;justify-content:space-between;align-items:center;margin:0 2px 6px}
+h2{font-size:1.05rem}
+
+.standings{list-style:none;margin:0;padding:0}
+.row{display:grid;grid-template-columns:34px minmax(0,1fr) auto;align-items:center;gap:12px;padding:12px 14px;border-top:1px solid var(--line)}
+.row:first-child{border-top:0}
+.standings.editing .row{grid-template-columns:34px minmax(0,1fr) auto 36px}
+.rank{font-family:var(--display);font-weight:700;color:var(--muted);text-align:center;border-radius:8px;padding:4px 0}
+.lead .rank{background:var(--gold);color:var(--gold-ink)}
+.name{display:block;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nameInput{width:100%;font:inherit;font-weight:700;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:6px 8px;min-height:36px}
+.bar{height:6px;border-radius:99px;background:var(--track);margin:6px 0 4px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .25s}
+.lead .bar i{background:var(--gold)}
+.sub{font-size:.8rem;color:var(--muted)}
+.tot{font-family:var(--display);font-weight:800;font-size:2rem;line-height:1;font-variant-numeric:tabular-nums}
+.empty{padding:22px 16px;text-align:center;color:var(--muted);display:grid;gap:4px}
+.empty strong{color:var(--ink);font-family:var(--display);font-size:1.1rem}
+.nameline{display:flex;align-items:center;gap:8px;min-width:0}
+.chip{flex:none;font-size:.68rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--accent);border:1px solid var(--accent);border-radius:99px;padding:1px 8px}
+.fine{margin:0;color:var(--muted);font-size:.85rem}
+.picker{padding:14px;display:grid;gap:10px}
+.picker h2{font-size:1rem}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.pick{font:inherit;font-weight:600;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:99px;padding:8px 16px;min-height:44px;cursor:pointer}
+.pick.on{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.pick:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+td.sc{position:relative}
+.st{position:absolute;top:0;left:0;border-top:14px solid var(--accent);border-right:14px solid transparent;pointer-events:none}
+.menu select.field{width:9rem}
+
+.x{border:0;background:transparent;color:var(--muted);font-size:1.3rem;line-height:1;min-width:32px;min-height:32px;border-radius:8px;cursor:pointer}
+.x:hover{color:var(--danger)}
+
+.sheet{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+table{border-collapse:separate;border-spacing:0;width:100%}
+th,td{padding:0;border-bottom:1px solid var(--line);text-align:center;min-width:72px}
+tbody tr:last-child th,tbody tr:last-child td{border-bottom:0}
+.rh{position:sticky;left:0;z-index:1;background:var(--surface);border-right:1px solid var(--line);min-width:68px;text-align:left}
+thead .rh{z-index:2}
+.rhi{display:flex;align-items:center;justify-content:space-between;gap:2px;padding:0 4px 0 12px;font-weight:600;color:var(--muted);font-size:.85rem}
+.rhi .x{min-width:28px;min-height:28px;font-size:1.1rem}
+th.ph{padding:10px 8px;font-size:.85rem;font-weight:700}
+.pn{display:block;max-width:10ch;margin:0 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.totrow th.rh,.totrow td{background:var(--track)}
+.totrow .rhi{color:var(--ink);padding-block:8px}
+td.t{font-family:var(--display);font-weight:800;font-size:1.4rem;padding:8px;font-variant-numeric:tabular-nums}
+td.t.lead{background:var(--gold);color:var(--gold-ink)}
+.cell{width:100%;min-width:72px;height:48px;border:0;border-radius:0;background:transparent;color:var(--ink);font:600 1.1rem var(--display);text-align:center;font-variant-numeric:tabular-nums}
+.cell::placeholder{color:var(--muted)}
+.cell:focus{outline:none;background:var(--bg);box-shadow:inset 0 0 0 2px var(--accent)}
+.none{padding:18px 12px;color:var(--muted);font-size:.9rem;text-align:center}
+.hint{margin:8px 2px 0;color:var(--muted);font-size:.85rem}
+
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:5;display:flex;gap:8px;background:var(--surface);border-top:1px solid var(--line);
+  padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.dock .grow{flex:1}
+.toast{position:fixed;z-index:6;left:max(16px,env(safe-area-inset-left,0px));right:max(16px,env(safe-area-inset-right,0px));bottom:calc(80px + env(safe-area-inset-bottom,0px));
+  max-width:30rem;margin:0 auto;background:var(--surface);border:1px solid var(--line);box-shadow:0 6px 24px rgba(0,0,0,.25);border-radius:12px;padding:6px 8px 6px 14px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px}
+@media (prefers-reduced-motion: reduce){.bar i{transition:none}}
+</style>
+
+</head>
+<body>
+<div class="page">
+  <header class="top">
+    <div class="brand">
+      <h1 aria-label="Flip 7 scores">Flip <span class="card7" aria-hidden="true">7</span></h1>
+      <span class="tagline" id="tagline"></span>
+    </div>
+    <button class="btn" id="menuBtn" type="button" aria-expanded="false" aria-controls="menu">Game</button>
+  </header>
+
+  <section class="panel menu" id="menu" hidden>
+    <label for="target">Target score
+      <input class="field" id="target" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+    </label>
+    <label for="starter" id="starterLabel">Round 1 starter
+      <select class="field" id="starter"></select>
+    </label>
+    <button class="btn" id="rematch" type="button">Rematch: same players, clear scores</button>
+    <button class="btn" id="fresh" type="button">Start fresh: remove everyone</button>
+    <p class="hintline">Every change can be undone for a few seconds.</p>
+  </section>
+
+  <div class="note" id="demoNote" hidden>
+    <span>Example game with sample scores.</span>
+    <button class="btn" id="demoFresh" type="button">Start fresh</button>
+  </div>
+
+  <div class="banner" id="banner" role="status" hidden></div>
+
+  <form class="add" id="addForm" autocomplete="off">
+    <input class="field" id="newName" maxlength="16" placeholder="Player name" aria-label="Player name">
+    <button class="btn primary" type="submit">Add player</button>
+  </form>
+
+  <section class="panel picker" id="picker" hidden>
+    <h2>Who starts round 1?</h2>
+    <div class="chips" id="pickerChips"></div>
+    <p class="fine">After each round the start passes to the next player in the list.</p>
+  </section>
+
+  <section>
+    <div class="sechead">
+      <h2>Standings</h2>
+      <button class="link" id="editBtn" type="button">Edit players</button>
+    </div>
+    <div class="panel" id="standings"></div>
+  </section>
+
+  <section id="gridWrap">
+    <div class="sechead"><h2>Scoresheet</h2></div>
+    <div class="sheet"><table id="grid"></table></div>
+    <p class="hint">Tap a score, then use Bust or Flip 7 to fill it in. A blue corner marks who starts each round.</p>
+  </section>
+</div>
+
+<div class="dock" id="dock">
+  <button class="btn" id="bust" type="button" disabled>Bust · 0</button>
+  <button class="btn" id="bonus" type="button" disabled>Flip 7 · +15</button>
+  <button class="btn primary grow" id="addRound" type="button">Add round</button>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+(function(){
+  var $ = function(s){ return document.querySelector(s); };
+  var KEY = 'flip7-scores-v1';
+  var state, lastCell = null, editing = false, undoStash = null, toastTimer = null;
+
+  function esc(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+  function demo(){
+    return {
+      players:[{id:'p1',name:'Ana'},{id:'p2',name:'Ben'},{id:'p3',name:'Cleo'}],
+      rounds:[{p1:21,p2:0,p3:34},{p1:15,p2:42,p3:0},{p1:58,p2:27,p3:19}],
+      target:200, demo:true, seq:3, startId:'p1'
+    };
+  }
+  function load(){
+    try{
+      var s = localStorage.getItem(KEY);
+      if(!s) return null;
+      var o = JSON.parse(s);
+      if(o && Array.isArray(o.players) && Array.isArray(o.rounds) && o.target > 0){
+        if(!o.players.some(function(p){ return p.id === o.startId; })) o.startId = o.players.length ? o.players[0].id : null;
+        return o;
+      }
+    }catch(e){}
+    return null;
+  }
+  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
+
+  function total(pid){
+    return state.rounds.reduce(function(sum, r){ return sum + (Number(r[pid]) || 0); }, 0);
+  }
+  function ranked(){
+    var list = state.players.map(function(p){ return {p:p, t:total(p.id)}; });
+    var sorted = list.slice().sort(function(a,b){ return b.t - a.t; });
+    var rank = 0, prev = null;
+    sorted.forEach(function(x,i){ if(x.t !== prev){ rank = i + 1; prev = x.t; } x.rank = rank; });
+    return sorted;
+  }
+
+  function startIdx(){
+    var i = state.players.findIndex(function(p){ return p.id === state.startId; });
+    return i < 0 ? 0 : i;
+  }
+  function starterOf(round){
+    var n = state.players.length;
+    return n ? state.players[(startIdx() + round) % n] : null;
+  }
+  function currentRound(){
+    var n = state.rounds.length;
+    if(!n) return 0;
+    var last = state.rounds[n - 1];
+    var done = state.players.every(function(p){ return last[p.id] != null; });
+    return done ? n : n - 1;
+  }
+  function gameOver(){
+    var r = ranked(), top = r[0];
+    return !!top && top.t >= state.target && r.filter(function(x){ return x.t === top.t; }).length === 1;
+  }
+
+  function renderTagline(){
+    var n = state.rounds.length;
+    $('#tagline').textContent = (n ? n + (n === 1 ? ' round' : ' rounds') : 'No rounds yet') + ' · first to ' + state.target;
+  }
+  function renderBanner(){
+    var el = $('#banner'), r = ranked(), top = r[0];
+    if(!top || top.t < state.target){ el.hidden = true; return; }
+    var tied = r.filter(function(x){ return x.t === top.t; });
+    el.hidden = false;
+    if(tied.length > 1){
+      el.textContent = tied.map(function(x){ return x.p.name; }).join(' and ') + ' are tied at ' + top.t + '. Play another round to break the tie.';
+    } else {
+      el.textContent = top.p.name + ' wins with ' + top.t + '.';
+    }
+  }
+  function renderStandings(){
+    var box = $('#standings');
+    if(!state.players.length){
+      box.innerHTML = '<div class="empty"><strong>No players yet</strong><span>Add everyone at the table, then start a round. Flip 7 plays 3 to 18.</span></div>';
+      return;
+    }
+    var r = ranked();
+    var cr = currentRound(), sp = gameOver() ? null : starterOf(cr);
+    box.innerHTML = '<ul class="standings' + (editing ? ' editing' : '') + '">' + r.map(function(x){
+      var lead = x.rank === 1 && x.t > 0;
+      var pct = Math.max(0, Math.min(100, x.t / state.target * 100));
+      var sub = x.t >= state.target ? 'Target reached' : (state.target - x.t) + ' to go';
+      var nameHtml = editing
+        ? '<input class="nameInput" data-id="' + x.p.id + '" maxlength="16" value="' + esc(x.p.name) + '" aria-label="Player name">'
+        : '<div class="nameline"><span class="name">' + esc(x.p.name) + '</span>' + (sp && sp.id === x.p.id ? '<span class="chip">Starts round ' + (cr + 1) + '</span>' : '') + '</div>';
+      var rm = editing ? '<button class="x rm" type="button" data-id="' + x.p.id + '" aria-label="Remove ' + esc(x.p.name) + '">×</button>' : '';
+      return '<li class="row' + (lead ? ' lead' : '') + '">' +
+        '<span class="rank">' + x.rank + '</span>' +
+        '<div>' + nameHtml + '<div class="bar"><i style="width:' + pct + '%"></i></div><span class="sub">' + sub + '</span></div>' +
+        '<span class="tot">' + x.t + '</span>' + rm + '</li>';
+    }).join('') + '</ul>';
+  }
+  function renderGrid(){
+    var g = $('#grid'), P = state.players;
+    lastCell = null; setHelpers();
+    $('#gridWrap').hidden = !P.length;
+    if(!P.length){ g.innerHTML = ''; return; }
+    var head = '<thead><tr><th class="rh" scope="col"><div class="rhi">Round</div></th>' +
+      P.map(function(p){ return '<th class="ph" scope="col"><span class="pn">' + esc(p.name) + '</span></th>'; }).join('') + '</tr>' +
+      '<tr class="totrow"><th class="rh" scope="row"><div class="rhi">Total</div></th>' +
+      P.map(function(p){ return '<td class="t" data-tot="' + p.id + '">' + total(p.id) + '</td>'; }).join('') + '</tr></thead>';
+    var body;
+    if(!state.rounds.length){
+      body = '<tbody><tr><td class="none" colspan="' + (P.length + 1) + '">No rounds yet. Tap Add round to start scoring.</td></tr></tbody>';
+    } else {
+      body = '<tbody>' + state.rounds.map(function(rd, i){
+        return '<tr><th class="rh" scope="row"><div class="rhi"><span>' + (i + 1) + '</span>' +
+          '<button class="x rr" type="button" data-r="' + i + '" aria-label="Remove round ' + (i + 1) + '">×</button></div></th>' +
+          P.map(function(p){
+            var v = rd[p.id] == null ? '' : rd[p.id];
+            var starts = starterOf(i).id === p.id;
+            return '<td class="sc">' + (starts ? '<span class="st" aria-hidden="true"></span>' : '') + '<input class="cell" id="c-' + i + '-' + p.id + '" data-r="' + i + '" data-p="' + p.id + '" type="text" inputmode="numeric" pattern="-?[0-9]*" autocomplete="off" placeholder="–" aria-label="' + esc(p.name) + ', round ' + (i + 1) + (starts ? ', starts the round' : '') + '" value="' + v + '"></td>';
+          }).join('') + '</tr>';
+      }).join('') + '</tbody>';
+    }
+    g.innerHTML = head + body;
+  }
+  function paintTotals(){
+    var r = ranked(), top = r[0] && r[0].t > 0 ? r[0].t : null;
+    document.querySelectorAll('[data-tot]').forEach(function(td){
+      var t = total(td.dataset.tot);
+      td.textContent = t;
+      td.classList.toggle('lead', top !== null && t === top);
+    });
+  }
+  function updateLive(){ renderTagline(); renderBanner(); renderStandings(); paintTotals(); }
+  function renderAll(){
+    var has = state.players.length > 0;
+    if(!has) editing = false;
+    $('#demoNote').hidden = !state.demo;
+    $('#target').value = state.target;
+    $('#dock').hidden = !has;
+    $('#editBtn').hidden = !has;
+    $('#editBtn').textContent = editing ? 'Done' : 'Edit players';
+    renderTagline(); renderBanner(); renderStandings(); renderPicker(); renderStarterSelect(); renderGrid(); paintTotals();
+  }
+  function renderPicker(){
+    var box = $('#picker');
+    var show = state.players.length > 0 && state.rounds.length === 0;
+    box.hidden = !show;
+    if(!show) return;
+    var si = startIdx();
+    $('#pickerChips').innerHTML = state.players.map(function(p, i){
+      return '<button class="pick' + (i === si ? ' on' : '') + '" type="button" data-id="' + p.id + '" aria-pressed="' + (i === si) + '">' + esc(p.name) + '</button>';
+    }).join('');
+  }
+  function renderStarterSelect(){
+    $('#starterLabel').hidden = !state.players.length;
+    var si = startIdx();
+    $('#starter').innerHTML = state.players.map(function(p, i){
+      return '<option value="' + p.id + '"' + (i === si ? ' selected' : '') + '>' + esc(p.name) + '</option>';
+    }).join('');
+  }
+  function setHelpers(){ $('#bust').disabled = $('#bonus').disabled = !lastCell; }
+
+  function toast(msg){
+    var t = $('#toast');
+    t.innerHTML = '<span></span><button class="link" id="undoBtn" type="button">Undo</button>';
+    t.firstChild.textContent = msg;
+    t.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.hidden = true; undoStash = null; }, 7000);
+  }
+  function mutate(msg, fn){
+    undoStash = JSON.stringify(state);
+    fn(); save(); renderAll(); toast(msg);
+  }
+
+  /* players */
+  $('#addForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var input = $('#newName'), name = input.value.trim();
+    if(!name) return;
+    var wasEmpty = !state.players.length;
+    var np = {id:'p' + (++state.seq), name:name};
+    state.players.push(np);
+    if(wasEmpty || !state.startId) state.startId = np.id;
+    save(); input.value = ''; renderAll(); input.focus();
+  });
+  $('#editBtn').addEventListener('click', function(){
+    editing = !editing;
+    $('#editBtn').textContent = editing ? 'Done' : 'Edit players';
+    renderStandings();
+  });
+  $('#standings').addEventListener('input', function(e){
+    if(!e.target.classList.contains('nameInput')) return;
+    var p = state.players.filter(function(x){ return x.id === e.target.dataset.id; })[0];
+    if(!p) return;
+    p.name = e.target.value.trim() || 'Player';
+    save(); renderGrid(); renderPicker(); renderStarterSelect(); paintTotals();
+  });
+  $('#standings').addEventListener('click', function(e){
+    var b = e.target.closest('.rm');
+    if(!b) return;
+    var id = b.dataset.id;
+    var p = state.players.filter(function(x){ return x.id === id; })[0];
+    mutate((p ? p.name : 'Player') + ' removed', function(){
+      state.players = state.players.filter(function(x){ return x.id !== id; });
+      state.rounds.forEach(function(r){ delete r[id]; });
+      if(state.startId === id) state.startId = state.players.length ? state.players[0].id : null;
+    });
+  });
+
+  /* scoresheet */
+  var grid = $('#grid');
+  grid.addEventListener('input', function(e){
+    var el = e.target;
+    if(!el.classList.contains('cell')) return;
+    var raw = el.value.replace(/[^0-9-]/g, '').replace(/(?!^)-/g, '');
+    if(raw !== el.value) el.value = raw;
+    var n = parseInt(raw, 10);
+    state.rounds[+el.dataset.r][el.dataset.p] = isNaN(n) ? null : n;
+    save(); updateLive();
+  });
+  grid.addEventListener('focusin', function(e){
+    if(!e.target.classList.contains('cell')) return;
+    lastCell = e.target; setHelpers();
+    try{ e.target.select(); }catch(err){}
+  });
+  grid.addEventListener('focusout', function(){
+    setTimeout(function(){
+      var a = document.activeElement;
+      if(!a || !a.classList || !a.classList.contains('cell')){ lastCell = null; setHelpers(); }
+    }, 0);
+  });
+  grid.addEventListener('keydown', function(e){
+    if(e.key !== 'Enter' || !e.target.classList.contains('cell')) return;
+    e.preventDefault();
+    var cells = Array.prototype.slice.call(grid.querySelectorAll('.cell'));
+    var next = cells[cells.indexOf(e.target) + 1];
+    if(next) next.focus(); else e.target.blur();
+  });
+  grid.addEventListener('click', function(e){
+    var b = e.target.closest('.rr');
+    if(!b) return;
+    var i = +b.dataset.r;
+    mutate('Round ' + (i + 1) + ' removed', function(){ state.rounds.splice(i, 1); });
+  });
+
+  /* dock */
+  var dock = $('#dock');
+  ['pointerdown','mousedown'].forEach(function(ev){
+    dock.addEventListener(ev, function(e){ e.preventDefault(); });
+  });
+  $('#addRound').addEventListener('click', function(){
+    if(!state.players.length) return;
+    state.rounds.push({});
+    save(); renderTagline(); renderPicker(); renderStandings(); renderGrid();
+    var cell = document.getElementById('c-' + (state.rounds.length - 1) + '-' + state.players[0].id);
+    if(cell){ cell.focus(); cell.scrollIntoView({block:'center', behavior:'smooth'}); }
+  });
+  function applyHelper(kind){
+    if(!lastCell || !document.contains(lastCell)) return;
+    var cur = parseInt(lastCell.value, 10);
+    var v = kind === 'bust' ? 0 : (isNaN(cur) ? 0 : cur) + 15;
+    lastCell.value = String(v);
+    lastCell.dispatchEvent(new Event('input', {bubbles:true}));
+  }
+  $('#bust').addEventListener('click', function(){ applyHelper('bust'); });
+  $('#bonus').addEventListener('click', function(){ applyHelper('bonus'); });
+
+  /* game menu */
+  function setMenu(open){
+    $('#menu').hidden = !open;
+    $('#menuBtn').setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  $('#menuBtn').addEventListener('click', function(){ setMenu($('#menu').hidden); });
+  document.addEventListener('click', function(e){
+    if($('#menu').hidden) return;
+    if(e.target.closest('#menu') || e.target.closest('#menuBtn')) return;
+    setMenu(false);
+  });
+  $('#target').addEventListener('input', function(e){
+    var v = parseInt(e.target.value.replace(/[^0-9]/g, ''), 10);
+    if(v > 0){ state.target = v; save(); updateLive(); }
+  });
+  $('#rematch').addEventListener('click', function(){
+    setMenu(false);
+    mutate('Scores cleared', function(){ state.rounds = []; state.demo = false; });
+  });
+  function startFresh(){
+    setMenu(false);
+    mutate('Everyone removed', function(){ state.players = []; state.rounds = []; state.demo = false; state.seq = 0; state.startId = null; });
+  }
+  $('#fresh').addEventListener('click', startFresh);
+  $('#demoFresh').addEventListener('click', startFresh);
+
+  /* starting player */
+  $('#pickerChips').addEventListener('click', function(e){
+    var b = e.target.closest('.pick');
+    if(!b) return;
+    state.startId = b.dataset.id;
+    save(); renderAll();
+  });
+  $('#starter').addEventListener('change', function(e){
+    state.startId = e.target.value;
+    save(); renderAll();
+  });
+
+  /* undo */
+  $('#toast').addEventListener('click', function(e){
+    if(e.target.id !== 'undoBtn' || !undoStash) return;
+    state = JSON.parse(undoStash); undoStash = null;
+    save(); $('#toast').hidden = true; renderAll();
+  });
+
+  state = load() || demo();
+  renderAll();
+})();
+</script>
+
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("sw.js").catch(function () {});
+  });
+}
+</script>
+</body>
+</html>
